@@ -10,28 +10,64 @@ const HEADERS = {
 // Пауза между ходами (мс)
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-// =======================
-// Регистрация
-// =======================
+
+const USE_MOCK = true;
+
+
 async function registerPlayer() {
+  if (USE_MOCK) {
+    console.log('[MOCK] Зарегистрировались (заглушка)');
+    return { name: 'MockPlayer', realm: 'antprotocol-test' };
+  }
+
   try {
     const res = await fetch(`${API_URL}/register`, { method: 'POST', headers: HEADERS });
     if (!res.ok) {
       const err = await res.json();
-      console.log('⚠️ Возможно, уже зарегистрированы: Ошибка регистрации:', err.message || res.statusText);
-      return;
+      console.log('Возможно, уже зарегистрированы: Ошибка регистрации:', err.message || res.statusText);
+      return null;
     }
     const data = await res.json();
-    console.log('✅ Зарегистрирован! Имя:', data.name, '| Раунд:', data.realm);
+    console.log('Зарегистрирован! Имя:', data.name, '| Раунд:', data.realm);
+    return data;
   } catch (error) {
-    console.error('⚠️ Ошибка регистрации:', error.message || 'Нет ответа');
+    console.error('Ошибка регистрации:', error.message || 'Нет ответа');
+    return null;
   }
 }
 
-// =======================
-// Получение состояния арены
-// =======================
+
 async function getArena() {
+  if (USE_MOCK) {
+    await delay(500); // имитация задержки
+    // Пример фиктивных данных, чтобы тестировать логику
+     return {
+    turnNo: 1,
+    score: 15,
+    ants: [
+      { id: 'ant1', q: 5, r: 5, type: 0 }, // рабочий рядом с едой
+      { id: 'ant2', q: 2, r: 2, type: 0 }, // рабочий далеко
+      { id: 'ant3', q: 4, r: 4, type: 1 }  // воин, не собирает еду
+    ],
+    food: [
+      { q: 6, r: 5 },
+      { q: 1, r: 1 }
+    ],
+    map: [
+      // Проходимые тайлы
+      { q: 5, r: 5, type: 1, cost: 1 },
+      { q: 6, r: 5, type: 1, cost: 1 },
+      { q: 2, r: 2, type: 1, cost: 1 },
+      { q: 3, r: 2, type: 1, cost: 1 },
+      { q: 4, r: 2, type: 1, cost: 1 },
+      { q: 1, r: 1, type: 1, cost: 1 },
+      { q: 4, r: 4, type: 1, cost: 1 },
+      { q: 5, r: 4, type: 5 }, // стена
+      { q: 6, r: 4, type: 1, cost: 1 }
+    ]
+  };
+  }
+
   try {
     const res = await fetch(`${API_URL}/arena`, { headers: HEADERS });
     if (!res.ok) {
@@ -40,29 +76,38 @@ async function getArena() {
     }
     return await res.json();
   } catch (error) {
-    console.error('❌ Ошибка: Ошибка арены:', error.message || 'Нет ответа');
+    console.error(' Ошибка: Ошибка арены:', error.message || 'Нет ответа');
     return null;
   }
 }
 
-// =======================
-// Пример простой логики: просто логируем муравьёв
-// =======================
-async function botLoop() {
-  while (true) {
-    const arena = await getArena();
-    if (arena && arena.ants) {
-      console.log(`📦 Ход #${arena.turnNo} | Муравьёв: ${arena.ants.length} | Очки: ${arena.score}`);
+async function sendMoves(moves) {
+  if (USE_MOCK) {
+    console.log('[MOCK] Отправка ходов:', JSON.stringify(moves, null, 2));
+    return { success: true };
+  }
+
+  try {
+    const res = await fetch(`${API_URL}/move`, {
+      method: 'POST',
+      headers: HEADERS,
+      body: JSON.stringify({ moves })
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.message || res.statusText);
     }
-    await delay(2500); // Подождать перед следующим запросом
+    const data = await res.json();
+    return data;
+  } catch (error) {
+    console.error(' Ошибка: Ошибка отправки ходов:', error.message || 'Нет ответа');
+    return null;
   }
 }
 
-// =======================
-// Запуск
-// =======================
-(async () => {
-  await registerPlayer();
-  await delay(2000); // Подождать немного после регистрации
-  await botLoop();   // Запустить основной цикл
-})();
+module.exports = {
+  registerPlayer,
+  getArena,
+  sendMoves,
+  delay
+};
