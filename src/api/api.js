@@ -7,11 +7,13 @@ const HEADERS = {
   'X-Auth-Token': TOKEN
 };
 
+
 // Пауза между ходами (мс)
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 
 const USE_MOCK = true;
+
 
 
 async function registerPlayer() {
@@ -31,7 +33,9 @@ async function registerPlayer() {
     console.log('Зарегистрирован! Имя:', data.name, '| Раунд:', data.realm);
     return data;
   } catch (error) {
-    console.error('Ошибка регистрации:', error.message || 'Нет ответа');
+
+    console.error('⚠️ Ошибка регистрации:', error.message || 'Нет ответа');
+
     return null;
   }
 }
@@ -81,6 +85,7 @@ async function getArena() {
   }
 }
 
+
 async function sendMoves(moves) {
   if (USE_MOCK) {
     console.log('[MOCK] Отправка ходов:', JSON.stringify(moves, null, 2));
@@ -91,7 +96,8 @@ async function sendMoves(moves) {
     const res = await fetch(`${API_URL}/move`, {
       method: 'POST',
       headers: HEADERS,
-      body: JSON.stringify({ moves })
+
+     body: JSON.stringify({ moves })
     });
     if (!res.ok) {
       const err = await res.json();
@@ -101,6 +107,7 @@ async function sendMoves(moves) {
     return data;
   } catch (error) {
     console.error(' Ошибка: Ошибка отправки ходов:', error.message || 'Нет ответа');
+
     return null;
   }
 }
@@ -111,3 +118,4 @@ module.exports = {
   sendMoves,
   delay
 };
+
