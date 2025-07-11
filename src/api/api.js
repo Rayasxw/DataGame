@@ -1,15 +1,15 @@
-const fetch = require('node-fetch');
+const fetch = require("node-fetch");
 
-const API_URL = 'https://games-test.datsteam.dev/api';
-const TOKEN = '27fa2e88-8672-431c-af5f-ee0d9701566e';
+const API_URL = "https://games-test.datsteam.dev/api";
+const TOKEN = "27fa2e88-8672-431c-af5f-ee0d9701566e";
 const HEADERS = {
-  'Content-Type': 'application/json',
-  'X-Auth-Token': TOKEN
+  "Content-Type": "application/json",
+  "X-Auth-Token": TOKEN,
 };
 
 
 // Пауза между ходами (мс)
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 
 const USE_MOCK = true;
@@ -23,20 +23,24 @@ async function registerPlayer() {
   }
 
   try {
-    const res = await fetch(`${API_URL}/register`, { method: 'POST', headers: HEADERS });
+    const res = await fetch(`${API_URL}/register`, {
+      method: "POST",
+      headers: HEADERS,
+    });
     if (!res.ok) {
       const err = await res.json();
-      console.log('Возможно, уже зарегистрированы: Ошибка регистрации:', err.message || res.statusText);
-      return null;
+
+      console.log(
+        "⚠️ Возможно, уже зарегистрированы: Ошибка регистрации:",
+        err.message || res.statusText
+      );
+      return;
     }
     const data = await res.json();
-    console.log('Зарегистрирован! Имя:', data.name, '| Раунд:', data.realm);
-    return data;
+    console.log("✅ Зарегистрирован! Имя:", data.name, "| Раунд:", data.realm);
   } catch (error) {
+    console.error("⚠️ Ошибка регистрации:", error.message || "Нет ответа");
 
-    console.error('⚠️ Ошибка регистрации:', error.message || 'Нет ответа');
-
-    return null;
   }
 }
 
@@ -80,28 +84,47 @@ async function getArena() {
     }
     return await res.json();
   } catch (error) {
-    console.error(' Ошибка: Ошибка арены:', error.message || 'Нет ответа');
+    console.error("❌ Ошибка: Ошибка арены:", error.message || "Нет ответа");
     return null;
   }
 }
 
-
-async function sendMoves(moves) {
-  if (USE_MOCK) {
-    console.log('[MOCK] Отправка ходов:', JSON.stringify(moves, null, 2));
-    return { success: true };
-  }
-
+// =======================
+// Отправка хода
+// =======================
+async function sendMove(moves) {
   try {
     const res = await fetch(`${API_URL}/move`, {
-      method: 'POST',
+      method: "POST",
       headers: HEADERS,
-
-     body: JSON.stringify({ moves })
+      body: JSON.stringify({ moves }),
     });
     if (!res.ok) {
       const err = await res.json();
-      throw new Error(err.message || res.statusText);
+      console.error("❌ Ошибка отправки хода:", err.message || res.statusText);
+      return false;
+    }
+    console.log("✅ Ход отправлен:", moves);
+    return true;
+  } catch (error) {
+    console.error(
+      "❌ Ошибка: Ошибка отправки хода:",
+      error.message || "Нет ответа"
+    );
+    return false;
+  }
+}
+
+// =======================
+// Пример простой логики: просто логируем муравьёв
+// =======================
+async function botLoop() {
+  while (true) {
+    const arena = await getArena();
+    if (arena && arena.ants) {
+      console.log(
+        `📦 Ход #${arena.turnNo} | Муравьёв: ${arena.ants.length} | Очки: ${arena.score}`
+      );
     }
     const data = await res.json();
     return data;
@@ -112,10 +135,11 @@ async function sendMoves(moves) {
   }
 }
 
-module.exports = {
-  registerPlayer,
-  getArena,
-  sendMoves,
-  delay
-};
-
+// =======================
+// Запуск
+// =======================
+(async () => {
+  await registerPlayer();
+  await delay(2000); // Подождать немного после регистрации
+  await botLoop(); // Запустить основной цикл
+})();
