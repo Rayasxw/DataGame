@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>DatsPulse Ant Bot</title>
+</head>
+<body>
+  <h1>🛠 Игра DatsPulse</h1>
+  <pre id="log">Загрузка...</pre>
+
+  <script>
+    const AUTH_TOKEN = '27fa2e88-8672-431c-af5f-ee0d9701566e';
+    const API_BASE = 'https://games-test.datsteam.dev/api';
+
+    const log = (msg) => {
+      const el = document.getElementById('log');
+      el.textContent += '\n' + msg;
+    };
+
+    async function getArena() {
+      const res = await fetch(`${API_BASE}/arena`, {
+        headers: {
+          'X-Auth-Token': AUTH_TOKEN
+        }
+      });
+
+      if (!res.ok) throw new Error('Ошибка получения арены: ' + res.status);
+      const data = await res.json();
+      return data;
+    }
+
+    async function sendMoves(moves) {
+      const res = await fetch(`${API_BASE}/move`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Auth-Token': AUTH_TOKEN
+        },
+        body: JSON.stringify({ moves })
+      });
+
+      if (!res.ok) throw new Error('Ошибка отправки движения: ' + res.status);
+      return await res.json();
+    }
+
+    function simpleStrategy(arena) {
+      const moves = [];
+
+      for (const ant of arena.ants) {
+        // Двигаем муравья на одну клетку вниз (r + 1)
+        const nextQ = ant.q;
+        const nextR = ant.r + 1;
+
+        moves.push({
+          ant: ant.id,
+          path: [{ q: nextQ, r: nextR }]
+        });
+
+        log(`Муравей ${ant.id} двигается на (${nextQ}, ${nextR})`);
+      }
+
+      return moves;
+    }
+
+    async function runBot() {
+      try {
+        const arena = await getArena();
+        log('=== Арена загружена ===');
+        log(JSON.stringify(arena, null, 2));
+
+        const moves = simpleStrategy(arena);
+
+        const result = await sendMoves(moves);
+        log('✅ Движения отправлены!');
+        log(JSON.stringify(result, null, 2));
+      } catch (err) {
+        log('❌ Ошибка: ' + err.message);
+      }
+    }
+
+    runBot();
+  </script>
+</body>
+</html>
