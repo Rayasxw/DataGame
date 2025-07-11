@@ -3,13 +3,11 @@ function getAttack(type){
     switch (type){
         case 0:
             return 30
-            break;
         case 1:
             return 70
-            break;
         case 2:
             return 20
-            break;
+        default: return 0
     }
 }
 
@@ -34,7 +32,7 @@ function isAdjacent(q1, r1, q2, r2) {
 
 // attack.js
 export function shouldAttack(ant, visibleEnemies, homeSpots) {
-  const enemyNearby = visibleEnemies.find(enemy => 
+  const adjacentEnemies = visibleEnemies.find(enemy => 
     isAdjacent(ant.q, ant.r, enemy.q, enemy.r)
   );
 
