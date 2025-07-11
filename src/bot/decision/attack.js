@@ -17,6 +17,14 @@ function isNearHome(q, r, homeSpots) {
   );
 }
 
+function hasSupport(ant, allies) {
+  return allies.some(ally =>
+    ally.id !== ant.id &&
+    isAdjacent(ant.q, ant.r, ally.q, ally.r) &&
+    !(ally.q === ant.q && ally.r === ant.r)
+  );
+}
+
 function isAdjacent(q1, r1, q2, r2) {
   const neighbors = [
     [q1 + 1, r1],
@@ -31,7 +39,7 @@ function isAdjacent(q1, r1, q2, r2) {
 
 
 // attack.js
-export function shouldAttack(ant, visibleEnemies, homeSpots) {
+export function shouldAttack(ant, visibleEnemies, homeSpots, allies) {
   const adjacentEnemies = visibleEnemies.find(enemy => 
     isAdjacent(ant.q, ant.r, enemy.q, enemy.r)
   );
@@ -39,8 +47,9 @@ export function shouldAttack(ant, visibleEnemies, homeSpots) {
   if (!adjacentEnemies.length) return null;
 
   const hasHomeBonus = isNearHome(ant.q, ant.r, homeSpots);
+  const hasSupportBonus = hasSupport(ant, allies);
   const baseAttack = getAttack(ant.type);
-  const totalAttack = baseAttack * (1 + (hasHomeBonus ? 0.25 : 0));
+  const totalAttack = baseAttack * (1 + (hasHomeBonus ? 0.25 : 0) + (hasSupportBonus ? 0.5 : 0));
 
   let bestTarget = null;
   let bestPriority = -Infinity;
