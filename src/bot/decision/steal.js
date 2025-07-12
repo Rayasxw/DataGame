@@ -1,5 +1,6 @@
-const { getNeighbors, getDistance } = require('../pathfinder/hexUtils');
-const { findPath } = require('../pathfinder/aStar');
+// src/bot/decision/steal.js
+const { getNeighborsSteal, hexDistanceSteal } = require('../pathfinder/hexUtils');
+const { findPathSteal } = require('../pathfinder/aStar');
 
 function selectTargetHex(ant, arena) {
   const enemyHome = arena.homes.find(home => home.player !== ant.player);
@@ -8,18 +9,18 @@ function selectTargetHex(ant, arena) {
   }
 
   const adjacentHexes = enemyHome.hexes
-    .flatMap(hex => getNeighbors(hex.q, hex.r))
+    .flatMap(hex => getNeighborsSteal(hex.q, hex.r))
     .filter(hex => !arena.homes.some(home => home.hexes.some(h => h.q === hex.q && h.r === hex.r)));
 
   const safeHexes = adjacentHexes.filter(hex => {
-    const distanceToCenter = getDistance(hex.q, hex.r, enemyHome.center.q, enemyHome.center.r);
+    const distanceToCenter = hexDistanceSteal(hex.q, hex.r, enemyHome.center.q, enemyHome.center.r);
     return distanceToCenter > 2;
   });
 
   let closestHex = null;
   let minDistance = Infinity;
   for (const hex of safeHexes) {
-    const distance = getDistance(ant.q, ant.r, hex.q, hex.r);
+    const distance = hexDistanceSteal(ant.q, ant.r, hex.q, hex.r);
     if (distance < minDistance) {
       minDistance = distance;
       closestHex = hex;
@@ -39,7 +40,7 @@ function stealFromAntHill(ant, arena) {
     return null;
   }
 
-  const path = findPath(
+  const path = findPathSteal(
     { q: ant.q, r: ant.r },
     targetHex,
     arena,
@@ -68,7 +69,7 @@ function returnToBase(ant, arena) {
     return null;
   }
 
-  const path = findPath(
+  const path = findPathSteal(
     { q: ant.q, r: ant.r },
     ownHome.center,
     arena,
